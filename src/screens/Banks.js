@@ -4,6 +4,8 @@ import { ApiClient } from '../services/ApiClient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import IconAwesome from 'react-native-vector-icons/Octicons';
 import CardBank from './CardBank'
+import { openDatabase } from 'react-native-sqlite-storage';
+
 
 const Banks = () => {
 
@@ -12,24 +14,92 @@ const Banks = () => {
     const [textInput, setTextInput] = useState('');
     const [banks, setBanks] = useState([]);
     const [initialBanks, setInitialBanks] = useState([]);
+    const db = openDatabase({ name: 'Banks.db' });
 
     useEffect(() => {
 
+        const connectAPI = () =>{
+            console.log("Consumo API");
+            return new Promise(async (resolve, reject) => {
+
+                let resp = await ApiClient.getBanks().catch( (errAPI) => {
+                    console.log({errAPI});
+                    resolve([]);
+                });
+                resolve(resp);
+            })
+
+        }
+
+        const fillDatabase = (arr) => {
+
+            return new Promise((resolve, reject) => {
+                if(arr.length > 0){
+                    arr.forEach((bank, index) => {
+                        db.transaction(function(transaction) {
+                            transaction.executeSql('INSERT INTO bank (bankName, description, age, url) VALUES (?,?,?,?)', [bank.bankName, bank.description, bank.age, bank.url], (success) => {
+                                console.log({success});
+                            });
+                        });
+                    });
+
+                    resolve(true);
+                }
+            })
+        }
+
         const init = async () => {
-            
-            let resp = await ApiClient.getBanks().catch( (err) => {
-                console.log({err});
-                let arr = [{"age": 10, "bankName": "Paga Todo", "description": "Banco Paga Todo es Para Todos", "url": "https://public-liarla.s3.us-east-2.amazonaws.com/ico_pagatodo.png"}, {"age": 10, "bankName": "BBVA Bancomer", "description": "BBVA Bancomer Creando Oportunidades", "url": "https://public-liarla.s3.us-east-2.amazonaws.com/ico_bancomer.png"}, {"age": 10, "bankName": "Banamex", "description": "Banamex lo mejor de México", "url": "https://public-liarla.s3.us-east-2.amazonaws.com/ico_banamex.png"}, {"age": 10, "bankName": "Santander", "description": "Santander sé parte de la banca digital", "url": "https://public-liarla.s3.us-east-2.amazonaws.com/ico_santander.png"}, {"age": 10, "bankName": "Scotiabank", "description": "Scotiabank el Banco de Nueva Escocia", "url": "https://public-liarla.s3.us-east-2.amazonaws.com/ico_scotiabank.png"}]
-                setBanks(arr);
-                setInitialBanks(arr);
-                setLoading(false);
+                        
+            //Creación de tabla bank para almacenar la información obtenida desde el API
+            db.transaction(function (txn) {
+                txn.executeSql(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='bank'",
+                    [],
+                    function (tx, res) {
+                        if (res.rows.length == 0) {
+                            txn.executeSql('DROP TABLE IF EXISTS bank', []);
+                            txn.executeSql(
+                                'CREATE TABLE IF NOT EXISTS bank(idBank INTEGER PRIMARY KEY AUTOINCREMENT, bankName VARCHAR(20), description VARCHAR(20), age INT(3), url VARCHAR(255))',
+                                [],
+                                async (transaction, resCreate) => {
+                                    console.log({resCreate});
+                                    let arr = await connectAPI();
+                                    let fill = await fillDatabase(arr);
+                                    setBanks(arr);
+                                    setInitialBanks(arr);
+                                    setLoading(false);
+                                }
+                            );
+                        }else{
+                            txn.executeSql('SELECT * FROM bank', [], async (tx, resSelect) => {
+                                console.log({resSelect});
+                                if(resSelect.rows.length === 0){
+                                    let arr = await connectAPI();
+                                    let fill = await fillDatabase(arr);
+
+                                    setBanks(arr);
+                                    setInitialBanks(arr);
+                                    setLoading(false);
+                                }else{
+                                    
+                                    let auxBank = [];
+                                    for (let index = 0; index < resSelect.rows.length; index++) {
+                                        auxBank.push(resSelect.rows.item(index));
+                                    }
+                                    setBanks(auxBank);
+                                    setInitialBanks(auxBank);
+                                    setLoading(false);
+                                }
+                            });                            
+                        }
+                    }
+                );
+            }, function(error) {
+                console.log('Transaction ERROR: ' + error.message);
+            }, function() {
+                console.log('Process complete');
             });
 
-            if(resp){
-                setBanks(resp);
-                setInitialBanks(resp);
-                setLoading(false);
-            }
         }
         
         init();
@@ -77,7 +147,7 @@ const Banks = () => {
     return (
         <View style={[styles.container]}>
             <View style={styles.containerInput}>
-                { emptyInput && <Icon name={'search'} size={30} color="#e4e4e4" style={[styles.iconSearch]} /> }
+                <Icon name={'search'} size={30} color="#e4e4e4" style={[styles.iconSearch]} />
                 { !emptyInput && <IconAwesome style={styles.iconClose} name="x" size={15} color="#707070EE" onPress={ () => clearInput() } /> }
                 <TextInput
                     style={styles.searchButton}
@@ -96,6 +166,8 @@ const Banks = () => {
                     }}
 
                     value={textInput}
+
+                    placeholder="Filtrar resultados"
                 />
             </View>
             <View style={[styles.containerBanks]} onPress={ () => showIcon() }>
@@ -130,21 +202,6 @@ const styles = StyleSheet.create({
         height: "100%",
         backgroundColor: "#FCFBFE"
     },
-    textEmpty:{
-        fontSize: 15,
-        fontFamily: 'OpenSansRegular',
-        textAlign: 'center',
-        lineHeight: 19,
-        color: "#707070",
-        marginTop: 17
-    },
-    textEmpty1:{
-        fontSize: 15,
-        fontFamily: 'OpenSansRegular',
-        textAlign: 'center',
-        lineHeight: 19,
-        color: "#707070"
-    },
     containerInput: {
         width: "100%",
         height: 75,
@@ -159,13 +216,14 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         height: 40,
         backgroundColor: "white",
-        paddingLeft: 20,
+        paddingLeft: 45,
         paddingRight: 35,
         borderRadius: 10,
         shadowRadius: 20,
         elevation: 4,
         fontFamily: "OpenSansLight",
         color: "#707070",
+        marginTop: 15
     },
     containerBank:{
         backgroundColor: "#FCFBFE"
@@ -180,13 +238,13 @@ const styles = StyleSheet.create({
     },
     iconSearch:{
         position: "absolute",
-        top: 16,
+        top: 31,
         left: 30,
         elevation:10
     },
     iconClose:{
         position: "absolute",
-        top: 23,
+        top: 38,
         right: 30,
         elevation:5,
         zIndex: 30

@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold'
     },
     description:{
+        paddingHorizontal: 30,
         marginTop: 20,
         fontSize: 20,
         textAlign: 'center'
