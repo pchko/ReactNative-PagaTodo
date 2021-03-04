@@ -1,5 +1,5 @@
 import React from 'react'
-import { StyleSheet, Text, View, Image } from 'react-native'
+import { StyleSheet, Text, View, Image, TouchableHighlight, Linking } from 'react-native'
 
 const Home = () => {
     return (
@@ -7,6 +7,12 @@ const Home = () => {
             <Image source={require('../assets/images/logo.jpg')} />
             <Text style={styles.welcome}>Bienvenido</Text>
             <Text style={styles.description}>Aplicación de prueba de PagaTodo con conexión a API</Text>
+            <Text style={styles.copyright}>
+                Desarrollado por 
+                <TouchableHighlight underlayColor="#FFF0" onPress={ () => Linking.openURL("https://github.com/pchko")}>
+                    <Text style={styles.name}>Ing. Rogelio Pacheco</Text>
+                </TouchableHighlight>
+            </Text>
         </View>
     )
 }
@@ -33,5 +39,16 @@ const styles = StyleSheet.create({
         marginTop: 20,
         fontSize: 20,
         textAlign: 'center'
+    },
+    copyright:{
+        position: "absolute",
+        bottom: 15,
+        textAlign: 'center',
+        color: "black",
+        fontSize: 18
+    },
+    name:{
+        fontWeight: 'bold',
+        color: "green"
     }
 })
