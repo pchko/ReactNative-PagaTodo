@@ -10,8 +10,7 @@ const HomeStack = (props) => {
 
     return (
         <Stack.Navigator>
-            <Stack.Screen name="Home" component={Home} options={{title: 'Home'}} />
-            <Stack.Screen name="Banks" component={Banks} options={{title: 'Banks'}}/>
+            <Stack.Screen name="Home" component={Home} options={{title: 'Inicio'}} />
         </Stack.Navigator>
     )
 }

@@ -29,8 +29,8 @@ const navigation = () => {
                 inactiveTintColor: 'gray',
             }}
         >
-            <Tab.Screen name="Home" component={HomeStack} options={{title: "Home"}} />
-            <Tab.Screen name="Bank" component={BankStack} options={{title: "Bank"}} />
+            <Tab.Screen name="Home" component={HomeStack} options={{title: "Inicio"}} />
+            <Tab.Screen name="Bank" component={BankStack} options={{title: "Bancos"}} />
         </Tab.Navigator>
     )
 }

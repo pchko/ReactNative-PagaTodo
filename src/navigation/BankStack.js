@@ -7,7 +7,7 @@ const Stack = createStackNavigator();
 const BankStack = () => {
     return (
         <Stack.Navigator>
-            <Stack.Screen name="Bank" component={Banks} options={{title: 'Bank'}}/>
+            <Stack.Screen name="Bank" component={Banks} options={{title: 'Bancos'}}/>
         </Stack.Navigator>
     )
 }
